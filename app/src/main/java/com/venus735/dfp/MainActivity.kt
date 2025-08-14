@@ -35,6 +35,7 @@ import androidx.compose.ui.unit.dp
 import com.venus735.devicefingerprint.BaseStationCollector
 import com.venus735.devicefingerprint.BaseStationCollector.BaseStationInfo
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
 
 class MainActivity : ComponentActivity() {
     private lateinit var baseStationCollector: BaseStationCollector
@@ -128,6 +129,9 @@ fun Greeting(name: String, modifier: Modifier = Modifier, activity: MainActivity
     var showPermissionDialog by remember { mutableStateOf(false) }
     val coroutineScope = rememberCoroutineScope()
     var baseStationCollector: BaseStationCollector? = null
+    // 添加硬件信息和位置信息状态
+    var hardwareInfo by remember { mutableStateOf("") }
+    var locationInfo by remember { mutableStateOf("") }
     
     // 应用启动时自动触发基站信息收集
     if (activity != null) {
@@ -139,6 +143,19 @@ fun Greeting(name: String, modifier: Modifier = Modifier, activity: MainActivity
                     baseStationList.clear()
                     baseStationList.addAll(baseStationInfoList)
                 }
+                
+                // 收集硬件信息和位置信息
+                val deviceInfoCollector = com.venus735.devicefingerprint.DeviceInfoCollector(activity)
+                hardwareInfo = deviceInfoCollector.collectHardwareInfo()
+                locationInfo = deviceInfoCollector.collectLocationInfo()
+                
+                // 每30秒刷新一次位置信息
+                while (true) {
+                    delay(30000) // 30秒延迟
+                    if (activity.hasPermissions()) {
+                        locationInfo = deviceInfoCollector.collectLocationInfo()
+                    }
+                }
             }
         } else {
             showPermissionDialog = true
@@ -147,18 +164,38 @@ fun Greeting(name: String, modifier: Modifier = Modifier, activity: MainActivity
     
     Column(modifier = modifier) {
         Text(text = dfp)
-        Button(onClick = {
-            // 点击按钮时也检查权限，如果权限不够则申请
-            if (activity != null) {
-                if (!activity.hasPermissions()) {
-                    activity.requestPermissions()
-                }
-            }
-        }) {
-            Text("获取设备指纹")
-        }
+        //     // 点击按钮时也检查权限，如果权限不够则申请
+        //     if (activity != null) {
+        //         if (!activity.hasPermissions()) {
+        //             activity.requestPermissions()
+        //         } else {
+        //             // 更新信息显示
+        //             val deviceInfoCollector = com.venus735.devicefingerprint.DeviceInfoCollector(activity)
+        //             hardwareInfo = deviceInfoCollector.collectHardwareInfo()
+        //             locationInfo = deviceInfoCollector.collectLocationInfo()
+        //         }
+        //     }
+        // }) {
+        //     Text("获取设备指纹")
+        // }
+        
+        // 显示硬件信息
+        Text(
+            text = "硬件信息: $hardwareInfo",
+            modifier = Modifier.padding(8.dp)
+        )
+        
+        // 显示位置信息
+        Text(
+            text = "位置信息: $locationInfo",
+            modifier = Modifier.padding(8.dp)
+        )
         
         // 基站信息列表
+        Text(
+            text = "基站信息:",
+            modifier = Modifier.padding(8.dp)
+        )
         LazyColumn(modifier = Modifier.fillMaxWidth()) {
             items(baseStationList) { baseStation ->
                 Text(
