@@ -21,3 +21,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "DFP"
 include(":app")
+include(":devicefingerprint")
